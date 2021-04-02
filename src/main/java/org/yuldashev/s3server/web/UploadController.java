@@ -32,6 +32,7 @@ import javax.validation.constraints.Pattern;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,19 +104,23 @@ public class UploadController {
         try {
             final byte[] content = file.getBytes();
 
+            s3client.putObject(config.bucketName, originalFilename, new String(content));
+
+
+
             //cannot upload bytes directly to S3, need this dependencies: import software.amazon.awssdk (Java V2)
             //https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/examples-s3-objects.html#upload-object
             //https://docs.aws.amazon.com/sdk-for-java/latest/migration-guide/whats-different.html
-            String tempFileName = "tempFile";
-            try (FileOutputStream fos = new FileOutputStream(tempFileName)) {
-                fos.write(content);
-            }
-            File tempFile = new File(tempFileName);
-            Upload upload = transferManager.upload(config.bucketName, originalFilename, tempFile);
-            upload.waitForUploadResult();
-            if (!tempFile.delete()) {
-                throw new Exception("Failed to clean the workspace");
-            }
+//            String tempFileName = "tempFile";
+//            try (FileOutputStream fos = new FileOutputStream(tempFileName)) {
+//                fos.write(content);
+//            }
+//            File tempFile = new File(tempFileName);
+//            Upload upload = transferManager.upload(config.bucketName, originalFilename, tempFile);
+//            upload.waitForUploadResult();
+//            if (!tempFile.delete()) {
+//                throw new Exception("Failed to clean the workspace");
+//            }
             return ResponseEntity.ok().build();
 
         } catch (AmazonServiceException e) {
@@ -125,8 +130,6 @@ public class UploadController {
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "uploading failed");
         } catch (SdkClientException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (InterruptedException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -145,7 +148,7 @@ public class UploadController {
         } catch (AmazonServiceException e) {
             // The call was transmitted successfully, but Amazon S3 couldn't process
             // it, so it returned an error response.
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (SdkClientException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -170,6 +173,12 @@ public class UploadController {
         try {
             S3Object fullObject = s3client.getObject(getObjectRequestHeaderOverride);
             fileContent = IOUtils.toByteArray(fullObject.getObjectContent());
+//            if(new String(fileContent).equals("")){// not to be NULL String
+//                fileContent = new byte[2];
+//                fileContent[0] = 1;
+//                fileContent[1] = '\0';
+//            }
+            //System.out.println("!!! " + Util.asOctetStream(fileContent));
         } catch (IOException e) {
             e.printStackTrace();
         } catch (AmazonServiceException e) {
