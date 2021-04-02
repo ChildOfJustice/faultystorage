@@ -89,4 +89,4 @@ fabric.properties
 
 
 
-/src/main/java/org/yuldashev/s3server/config.json
+/src/main/resources/config.json
