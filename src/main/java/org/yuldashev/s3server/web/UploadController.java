@@ -8,9 +8,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.util.IOUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -30,9 +27,7 @@ import org.yuldashev.s3server.util.Util;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,8 +42,6 @@ public class UploadController {
     private final AppConfiguration config;
     @NotNull
     private final AmazonS3 s3client;
-    @NotNull
-    private final TransferManager transferManager;
 
 
     @Autowired
@@ -76,10 +69,6 @@ public class UploadController {
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withRegion(config.region)
                 .build();
-
-        transferManager = TransferManagerBuilder.standard()
-                .withS3Client(s3client)
-                .build();
     }
 
     @GetMapping(value = "files", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -106,26 +95,9 @@ public class UploadController {
 
             s3client.putObject(config.bucketName, originalFilename, new String(content));
 
-
-
-            //cannot upload bytes directly to S3, need this dependencies: import software.amazon.awssdk (Java V2)
-            //https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/examples-s3-objects.html#upload-object
-            //https://docs.aws.amazon.com/sdk-for-java/latest/migration-guide/whats-different.html
-//            String tempFileName = "tempFile";
-//            try (FileOutputStream fos = new FileOutputStream(tempFileName)) {
-//                fos.write(content);
-//            }
-//            File tempFile = new File(tempFileName);
-//            Upload upload = transferManager.upload(config.bucketName, originalFilename, tempFile);
-//            upload.waitForUploadResult();
-//            if (!tempFile.delete()) {
-//                throw new Exception("Failed to clean the workspace");
-//            }
             return ResponseEntity.ok().build();
 
         } catch (AmazonServiceException e) {
-            // The call was transmitted successfully, but Amazon S3 couldn't process
-            // it, so it returned an error response.
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "uploading failed");
@@ -146,8 +118,6 @@ public class UploadController {
         try {
             s3client.deleteObject(new DeleteObjectRequest(config.bucketName, filename));
         } catch (AmazonServiceException e) {
-            // The call was transmitted successfully, but Amazon S3 couldn't process
-            // it, so it returned an error response.
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         } catch (SdkClientException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -161,8 +131,7 @@ public class UploadController {
     public ResponseEntity<Resource> download(@PathVariable
                                              @NotNull(message = "filename should be provided")
                                              @Pattern(regexp = FILENAME_REGEX, message = "filename is invalid") final String filename) {
-        //return storage.download(filename);
-        // Get an object and print its contents.
+
         System.out.println("Downloading an object");
         ResponseHeaderOverrides headerOverrides = new ResponseHeaderOverrides()
                 .withCacheControl("No-cache")
@@ -173,12 +142,6 @@ public class UploadController {
         try {
             S3Object fullObject = s3client.getObject(getObjectRequestHeaderOverride);
             fileContent = IOUtils.toByteArray(fullObject.getObjectContent());
-//            if(new String(fileContent).equals("")){// not to be NULL String
-//                fileContent = new byte[2];
-//                fileContent[0] = 1;
-//                fileContent[1] = '\0';
-//            }
-            //System.out.println("!!! " + Util.asOctetStream(fileContent));
         } catch (IOException e) {
             e.printStackTrace();
         } catch (AmazonServiceException e) {

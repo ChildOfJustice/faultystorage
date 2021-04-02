@@ -23,9 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-//@RunWith(SpringRunner.class)
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-//@ActiveProfiles("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class IntegrationTests {
 
@@ -88,9 +87,7 @@ public class IntegrationTests {
         System.out.println("Testing GET a concrete file");
 
         ResponseEntity<byte[]> responseEntity = restTemplate.exchange(serverUrl + "/" + testFileName,
-                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {
-                });
-//        System.out.println(responseEntity.toString());
+                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {});
         Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
         Assertions.assertThat(responseEntity.getBody()).isNotNull();
         String fileContent = new String(responseEntity.getBody());
@@ -157,8 +154,7 @@ public class IntegrationTests {
 
 
         ResponseEntity<byte[]> getFileResponse = restTemplate.exchange(serverUrl + "/" + testFileName,
-                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {
-                });
+                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {});
 
         Assertions.assertThat(getFileResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         Assertions.assertThat(getFileResponse.getBody()).isNotNull();
@@ -175,8 +171,7 @@ public class IntegrationTests {
     void testDeleteExistingFile() {
         System.out.println("Testing DELETE an existing file");
         ResponseEntity<byte[]> responseEntity = restTemplate.exchange(serverUrl + "/" + testFileName,
-                HttpMethod.DELETE, null, new ParameterizedTypeReference<byte[]>() {
-                });
+                HttpMethod.DELETE, null, new ParameterizedTypeReference<byte[]>() {});
         Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -185,8 +180,7 @@ public class IntegrationTests {
     void testGetNonExistingFile() {
         System.out.println("Testing GET non existing file");
         ResponseEntity<byte[]> responseEntity = restTemplate.exchange(serverUrl + "/" + testFileName,
-                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {
-                });
+                HttpMethod.GET, null, new ParameterizedTypeReference<byte[]>() {});
 
         Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         Assertions.assertThat(responseEntity.getBody()).isNotNull();
@@ -201,8 +195,7 @@ public class IntegrationTests {
     void testDeleteNonExistingFile() {
         System.out.println("Testing DELETE non existing file");
         ResponseEntity<byte[]> responseEntity = restTemplate.exchange(serverUrl + "/" + testFileName,
-                HttpMethod.DELETE, null, new ParameterizedTypeReference<byte[]>() {
-                });
+                HttpMethod.DELETE, null, new ParameterizedTypeReference<byte[]>() {});
 
         Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
         Assertions.assertThat(responseEntity.getBody()).isNull();
