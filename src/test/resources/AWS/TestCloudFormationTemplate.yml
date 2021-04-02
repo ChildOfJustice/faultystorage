@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  Test template with S3 bucket and user for programmatic access.
+Parameters:
+  S3BucketName:
+    Type: String
+    Default: jetbrains-sardor-bucket
+Resources:
+  #----------------------------------IAM-----------------------------------
+  ProgrammaticUserForS3:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: ManagerS3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObjectTagging
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:ReplicateTags
+                  - s3:PutObjectVersionTagging
+                  - s3:PutObjectTagging
+                Resource:
+                  - !GetAtt StorageBucket.Arn
+                  - !Sub
+                    - ${bucketArn}/*
+                    - { bucketArn: !GetAtt StorageBucket.Arn }
+      UserName: 'ManagerS3'
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref ProgrammaticUserForS3
+  #----------------------------------BACKEND-----------------------------------
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      CorsConfiguration:
+        CorsRules:
+          -
+            AllowedOrigins:
+              - "*"
+            AllowedMethods:
+              - POST
+              - GET
+              - PUT
+              - DELETE
+              - HEAD
+            AllowedHeaders:
+              - "*"
+Outputs:
+  AccessKeyId:
+    Value: !Ref AccessKey
+  SecretAccessKey:
+    Value: !GetAtt AccessKey.SecretAccessKey

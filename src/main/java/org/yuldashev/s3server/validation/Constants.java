@@ -1,4 +1,4 @@
-package org.dimyriy.faultyserver.validation;
+package org.yuldashev.s3server.validation;
 
 import javax.validation.constraints.NotNull;
 
